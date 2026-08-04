@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reglas de seguridad para la colección de eventos
+    match /events/{eventId} {
+      
+      // Permitir lectura si el usuario está autenticado y es propietario del evento
+      allow read: if request.auth != null 
+                  && resource.data.userId == request.auth.uid;
+      
+      // Permitir creación si el usuario está autenticado, asigna su propio UID 
+      // y proporciona campos obligatorios válidos (título y fecha)
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.title != null 
+                    && request.resource.data.title != ""
+                    && request.resource.data.date != null 
+                    && request.resource.data.date != "";
+      
+      // Permitir actualización si el usuario está autenticado, es propietario,
+      // no intenta transferir la propiedad (userId no cambia)
+      // y mantiene los campos obligatorios válidos
+      allow update: if request.auth != null 
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId
+                    && request.resource.data.title != null 
+                    && request.resource.data.title != ""
+                    && request.resource.data.date != null 
+                    && request.resource.data.date != "";
+      
+      // Permitir eliminación si el usuario está autenticado y es propietario
+      allow delete: if request.auth != null 
+                    && resource.data.userId == request.auth.uid;
+    }
+  }
+}
